@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name            AI Chat Markdown Export (ChatGPT / Gemini / Grok)
 // @namespace       https://github.com/YunAsimov
-// @version         1.0.0
+// @version         1.0.1
 // @description     Export conversations from ChatGPT / Gemini / Grok (X AI) to clean Markdown with auto full-scroll, code fences, KaTeX, timestamps.
 // @author          YunAsimov
 // @license         MIT
@@ -58,6 +58,13 @@
       to: function(html, platform) {
 	    const parser = new DOMParser();
 	    const doc = parser.parseFromString(html, "text/html");
+	    const decodeEntities = (text = "") => text
+	      .replaceAll("&gt;", ">")
+	      .replaceAll("&lt;", "<")
+	      .replaceAll("&amp;", "&")
+	      .replaceAll("&nbsp;", " ")
+	      .replaceAll(/&lbrace;|&#123;|&#x7B;/gi, "{")
+	      .replaceAll(/&rbrace;|&#125;|&#x7D;/gi, "}");
 	    const isGemini = platform === "gemini";
 	    if (!isGemini) {
 	      doc.querySelectorAll("span.katex-html").forEach((element) => element.remove());
@@ -65,13 +72,11 @@
 	    doc.querySelectorAll("mrow").forEach((mrow) => mrow.remove());
 	    doc.querySelectorAll('annotation[encoding="application/x-tex"]').forEach((element) => {
 	      if (element.closest(".katex-display")) {
-	        const latex = element.textContent;
-	        const trimmedLatex = latex.trim();
-	        element.replaceWith(`\n$$\n${trimmedLatex}\n$$\n`);
+	        const latex = decodeEntities(element.textContent.trim());
+	        element.replaceWith(`\n$$\n${latex}\n$$\n`);
 	      } else {
-	        const latex = element.textContent;
-	        const trimmedLatex = latex.trim();
-	        element.replaceWith(`$${trimmedLatex}$`);
+	        const latex = decodeEntities(element.textContent.trim());
+	        element.replaceWith(`$${latex}$`);
 	      }
 	    });
 	    doc.querySelectorAll("strong, b").forEach((bold) => {
@@ -86,6 +91,41 @@
 	      const markdownCode = `\`${code.textContent}\``;
 	      code.parentNode.replaceChild(document.createTextNode(markdownCode), code);
 	    });
+	    // Handle standalone <code> elements that are not inside <pre>:
+	    // - If multiline or long, treat as fenced code block.
+	    // - Otherwise render as inline code (falling back to ``inline`` when a backtick is present).
+	    doc.querySelectorAll("code").forEach((code) => {
+	      if (code.closest("pre")) return;
+	      // Skip if already handled as inline via the 'p code' rule:
+	      if (code.parentElement && code.parentElement.tagName && code.parentElement.tagName.toLowerCase() === "p") return;
+	      const text = code.textContent || "";
+	      const trimmed = text.trim();
+	      if (!trimmed) {
+	        code.replaceWith("");
+	        return;
+	      }
+	      const isMultiline = text.includes("\n");
+	      const isLong = text.length > 160;
+	      const hasBacktick = text.includes("`");
+	      const lang =
+	        (code.getAttribute("class") || "").match(/language-([\w+-]+)/)?.[1] ||
+	        code.getAttribute("data-lang") ||
+	        "";
+
+				if (isMultiline || isLong) {
+				  const fenced = `\n\`\`\`${lang}\n${text}\n\`\`\`\n`;
+				  code.replaceWith(fenced);
+				  return;
+				}
+
+	      if (hasBacktick) {
+	        // Use double backticks to keep inline formatting without opening a fence.
+	        code.replaceWith(`\`\`${text}\`\``);
+	      } else {
+	        code.replaceWith(`\`${text}\``);
+	      }
+	    });
+
 	    doc.querySelectorAll("a").forEach((link) => {
 	      const markdownLink = `[${link.textContent}](${link.href})`;
 	      link.parentNode.replaceChild(document.createTextNode(markdownLink), link);
@@ -96,11 +136,13 @@
 	    });
 	    if (platform === "chatGPT") {
 	      doc.querySelectorAll("pre").forEach((pre) => {
-	        const codeType = pre.querySelector("div > div:first-child")?.textContent || "";
-	        const markdownCode = pre.querySelector("div > div:nth-child(3) > code")?.textContent || pre.textContent;
-	        pre.innerHTML = `\n\`\`\`${codeType}\n${markdownCode}\n\`\`\``;
+	        const lang = pre.querySelector("div > div:first-child")?.textContent?.trim() || "";
+	        const codeNode = pre.querySelector("div > div:nth-child(3) > code") || pre.querySelector("code");
+	        const codeText = (codeNode ? codeNode.textContent : pre.textContent) || "";
+	        if (!codeText.trim()) return;
+	        pre.replaceWith(`\n\`\`\`${lang}\n${codeText}\n\`\`\`\n`);
 	      });
-	    } else if (platform === "grok") {
+			} else if (platform === "grok") {
 	      doc.querySelectorAll("div.not-prose").forEach((div) => {
 	        const codeType = div.querySelector("div > div > span")?.textContent || "";
 	        const markdownCode = div.querySelector("div > div:nth-child(3) > code")?.textContent || div.textContent;
@@ -151,8 +193,12 @@
 	      });
 	      table.parentNode.replaceChild(document.createTextNode("\n" + markdown2.trim() + "\n"), table);
 	    });
-	    let markdown = doc.body.innerHTML.replace(/<[^>]*>/g, "");
-	    return markdown.replaceAll(/- &gt;/g,"- $\\gt$").replaceAll(/>/g,">").replaceAll(/</g,"<").replaceAll(/≥/g,">=").replaceAll(/≤/g,"<=").replaceAll(/≠/g,"\\neq").trim()
+	    const markdown = decodeEntities(doc.body.innerHTML.replace(/<[^>]*>/g, ""));
+	    return markdown
+	      .replaceAll(/≥/g, ">=")
+	      .replaceAll(/≤/g, "<=")
+	      .replaceAll(/≠/g, "\\neq")
+	      .trim()
       }
     };
 
@@ -270,11 +316,11 @@
         const filename = `${timestamp}_${this.sanitizeFilename(title) || "chat_export"}.md`;
 	    for (let i = 0; i < result.length; i += 2) {
 	      if (!result[i + 1]) break;
-	      let userText = result[i].textContent.trim();
-	      let answerHtml = result[i + 1].innerHTML.trim();
-	      userText = HtmlToMarkdown.to(userText, platform);
-	      answerHtml = HtmlToMarkdown.to(answerHtml, platform);
-	      markdownContent += `\n# Q:\n${userText}\n# A:\n${answerHtml}`;
+	      const rawUserHtml = (result[i].innerHTML || result[i].textContent || "").trim();
+	      const rawAnswerHtml = (result[i + 1].innerHTML || result[i + 1].textContent || "").trim();
+	      const userMarkdown = HtmlToMarkdown.to(rawUserHtml, platform);
+	      const answerMarkdown = HtmlToMarkdown.to(rawAnswerHtml, platform);
+	      markdownContent += `\n# Q:\n${userMarkdown}\n# A:\n${answerMarkdown}`;
 	    }
 	    markdownContent = markdownContent.replace(/&amp;/g, "&");
 	    if (markdownContent.trim()) {

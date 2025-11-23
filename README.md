@@ -38,7 +38,7 @@ AI Chat Markdown Export 是一个用户脚本（UserScript），用于一键将 
    - Violentmonkey
    - Greasemonkey（新版本）
 2. 打开以下 Raw 链接（若 404，请先将仓库中的脚本重命名为 `.user.js` 再使用）：
-   https://raw.githubusercontent.com/YunAsimov/AI-Chat-Md-Export/main/ai-chat-md-export.user.js
+   https://raw.githubusercontent.com/zhutao100/AI-Chat-Md-Export/main/ai-chat-md-export.user.js
 3. 或者手动安装：
    - 打开仓库文件 `ai-chat-md-export.js`
    - 全选复制内容
@@ -93,12 +93,12 @@ def quicksort(arr):
 ## 开发与调试
 克隆仓库：
 ```
-Git clone https://github.com/YunAsimov/AI-Chat-Md-Export.git
+Git clone https://github.com/zhutao100/AI-Chat-Md-Export.git
 ```
 修改脚本后，可直接在浏览器扩展管理器中重新载入。由于这是纯前端脚本，不需要构建工具。
 
 ## 反馈
 问题 / 建议请提交 Issue：
-https://github.com/YunAsimov/AI-Chat-Md-Export/issues
+https://github.com/zhutao100/AI-Chat-Md-Export/issues
 
 如果这个脚本对你有帮助，欢迎 Star 支持！⭐

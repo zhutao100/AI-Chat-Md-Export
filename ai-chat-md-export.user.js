@@ -1,16 +1,16 @@
 
 // ==UserScript==
 // @name            AI Chat Markdown Export (ChatGPT / Gemini / Grok)
-// @namespace       https://github.com/YunAsimov
+// @namespace       https://github.com/zhutao100
 // @version         1.0.1
 // @description     Export conversations from ChatGPT / Gemini / Grok (X AI) to clean Markdown with auto full-scroll, code fences, KaTeX, timestamps.
-// @author          YunAsimov
+// @author          YunAsimov, zhutao100
 // @license         MIT
-// @homepageURL     https://github.com/YunAsimov/AI-Chat-Md-Export
-// @source          https://github.com/YunAsimov/AI-Chat-Md-Export
-// @supportURL      https://github.com/YunAsimov/AI-Chat-Md-Export/issues
-// @downloadURL     https://raw.githubusercontent.com/YunAsimov/AI-Chat-Md-Export/main/ai-chat-md-export.user.js
-// @updateURL       https://raw.githubusercontent.com/YunAsimov/AI-Chat-Md-Export/main/ai-chat-md-export.user.js
+// @homepageURL     https://github.com/zhutao100/AI-Chat-Md-Export
+// @source          https://github.com/zhutao100/AI-Chat-Md-Export
+// @supportURL      https://github.com/zhutao100/AI-Chat-Md-Export/issues
+// @downloadURL     https://raw.githubusercontent.com/zhutao100/AI-Chat-Md-Export/main/ai-chat-md-export.user.js
+// @updateURL       https://raw.githubusercontent.com/zhutao100/AI-Chat-Md-Export/main/ai-chat-md-export.user.js
 // @icon            https://chat.openai.com/favicon.ico
 // @match           https://chat.openai.com/*
 // @match           https://chatgpt.com/*
